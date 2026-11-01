@@ -1,16 +1,15 @@
 import mongoose from 'mongoose';
 import { config } from './config/config';
 import Logging from './library/Logging';
-import Author from './models/Author';
-import Book from './models/Book';
 import User from './models/User';
 import Activity from './models/Activity';
-import { authorsSeed, booksSeed, SEED_USERS, getSeedActivities } from './seed-data';
+import Report from './models/Report';
+import { SEED_USERS, getSeedActivities, getSeedReports } from './seed-data';
 
 // Llena la base de datos con los datos de ejemplo de seed-data.ts.
 //
 //   npm run seed             inserta los datos solo si la base de datos está vacía
-//   npm run seed -- --reset  borra todo (autores, libros, usuarios y actividades) y vuelve a insertarlos
+//   npm run seed -- --reset  borra todo (autores, libros, usuarios, actividades y reportes) y vuelve a insertarlos
 
 const reset = process.argv.includes('--reset');
 
@@ -19,61 +18,57 @@ const seed = async () => {
     Logging.info(`Conectado a ${config.mongo.url}`);
 
     if (reset) {
-        // Borrado físico completo de las colecciones antiguas y nuevas
-        const authorsDeleted = await Author.deleteMany({});
-        const booksDeleted = await Book.deleteMany({});
+        // Borrado físico completo de todas las colecciones
         const usersDeleted = await User.deleteMany({});
         const activitiesDeleted = await Activity.deleteMany({});
+        const reportsDeleted = await Report.deleteMany({});
 
-        Logging.warning(`Borrados ${authorsDeleted.deletedCount} autores, ${booksDeleted.deletedCount} libros, ${usersDeleted.deletedCount} usuarios y ${activitiesDeleted.deletedCount} actividades`);
+        Logging.warning(`Borrados ${usersDeleted.deletedCount} usuarios, ${activitiesDeleted.deletedCount} actividades y ${reportsDeleted.deletedCount} reportes`);
     }
 
     const usersInDb = await User.countDocuments();
-    const authorsInDb = await Author.countDocuments();
+    const activitiesInDb = await Activity.countDocuments();
+    const reportsInDb = await Report.countDocuments();
 
-    if (usersInDb > 0 || authorsInDb > 0) {
-        Logging.warning('La base de datos ya tiene datos. Para rehacerla: npm run seed -- --reset');
+    // Verificación de integridad: si alguna colección clave ya tiene datos, abortamos salvo flag --reset
+    if (usersInDb > 0 || activitiesInDb > 0 || reportsInDb > 0) {
+        Logging.warning('La base de datos ya contiene datos. Para reinicializarla ejecuta: npm run seed -- --reset');
         return;
     }
 
-    // 1. INSERCIÓN DE AUTORES Y LIBROS (REFERENCIA DE LA PLANTILLA)
-    const createdAuthors = await Author.create(authorsSeed);
-    Logging.info(`Autores creados: ${createdAuthors.length}`);
-
-    const booksWithAuthors = booksSeed.map(({ authorEmails, ...book }) => {
-        const authors = authorEmails.map((email) => {
-            const author = createdAuthors.find((created) => created.email === email);
-            if (!author) {
-                throw new Error(`En seed-data.ts hay un libro de un autor que no existe: ${email}`);
-            }
-            return author._id;
-        });
-        return { ...book, authors };
-    });
-
-    const createdBooks = await Book.insertMany(booksWithAuthors);
-    Logging.info(`Libros creados: ${createdBooks.length}`);
-
-    // 2. INSERCIÓN DE USUARIOS Y ACTIVIDADES (PROYECTO FINAL)
+    // 1. INSERCIÓN DE USUARIOS
+    // Se insertan mediante bucle secuencial y User.create() para activar los hooks pre-save (hashing de contraseña con bcrypt)
     const createdUsers = [];
     for (const userData of SEED_USERS) {
-        // Usamos User.create() para que se ejecute el middleware pre-save de bcrypt con "sprint1"
         const user = await User.create(userData);
         createdUsers.push(user);
     }
     Logging.info(`Usuarios creados: ${createdUsers.length}`);
 
+    // 2. INSERCIÓN DE ACTIVIDADES VINCULADAS
     const adminUser = createdUsers.find((u) => u.role === 'ADMIN');
     const storeUser = createdUsers.find((u) => u.role === 'STORE_HOST');
     const standardUser = createdUsers.find((u) => u.role === 'USER');
 
-    if (adminUser && storeUser && standardUser) {
-        const activitiesData = getSeedActivities(adminUser._id.toString(), storeUser._id.toString(), standardUser._id.toString());
+    if (!adminUser || !storeUser || !standardUser) {
+        Logging.error('Faltan usuarios con roles requeridos (ADMIN, STORE_HOST, USER) en SEED_USERS para generar actividades y reportes.');
+        return;
+    }
 
-        const createdActivities = await Activity.insertMany(activitiesData);
-        Logging.info(`Actividades creadas: ${createdActivities.length}`);
+    const activitiesData = getSeedActivities(adminUser._id.toString(), storeUser._id.toString(), standardUser._id.toString());
+
+    const createdActivities = await Activity.insertMany(activitiesData);
+    Logging.info(`Actividades creadas: ${createdActivities.length}`);
+
+    // 3. INSERCIÓN DE REPORTES DE MODERACIÓN
+    if (createdActivities.length > 0) {
+        // Enlaza el reporte al usuario estándar como denunciante y a la primera actividad como objetivo
+        const reportsData = getSeedReports(standardUser._id.toString(), createdActivities[0]._id.toString());
+
+        const createdReports = await Report.insertMany(reportsData);
+        Logging.info(`Reportes creados: ${createdReports.length}`);
     } else {
-        Logging.error('Faltan usuarios con roles ADMIN, STORE_HOST o USER en SEED_USERS.');
+        Logging.warning('No se han creado reportes al no existir actividades disponibles para vincular.');
     }
 };
 

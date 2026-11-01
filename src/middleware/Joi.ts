@@ -1,16 +1,20 @@
 import Joi, { ObjectSchema } from 'joi';
 import { NextFunction, Request, Response } from 'express';
 
-import { IAuthor } from '../models/Author';
-import { BOOK_LANGUAGES, BOOK_TAGS, IBook } from '../models/Book';
 import { IUser } from '../models/User';
 import { IActivity } from '../models/Activity';
+import { IReport } from '../models/Report';
 
-// Función que se encarga de validar los datos que llegan en una petición
+// Función que valida los datos del body.
+// stripUnknown: true elimina automáticamente campos de sistema (_id, createdAt, etc.) sin lanzar error 422.
 export const ValidateJoi = (schema: ObjectSchema) => {
     return async (req: Request, res: Response, next: NextFunction) => {
         try {
-            await schema.validateAsync(req.body);
+            const validatedBody = await schema.validateAsync(req.body, {
+                abortEarly: false,
+                stripUnknown: true
+            });
+            req.body = validatedBody; // Asigna valores por defecto y tipos saneados (ej: Date)
             next();
         } catch (error) {
             next(error);
@@ -21,7 +25,7 @@ export const ValidateJoi = (schema: ObjectSchema) => {
 // Un id de MongoDB tiene 24 caracteres hexadecimales
 const OBJECT_ID = /^[0-9a-fA-F]{24}$/;
 
-// Función que comprueba el id que llega en los parámetros de la URL
+// Comprueba el id que llega en los parámetros de la URL
 export const ValidateId = (paramName: string) => {
     return (req: Request, res: Response, next: NextFunction) => {
         const id = req.params[paramName];
@@ -38,68 +42,6 @@ export const ValidateId = (paramName: string) => {
 // ESQUEMAS DE VALIDACIÓN DE LA APLICACIÓN
 // ============================================================================
 export const Schemas = {
-    // ------------------------------------------------------------------------
-    // REFERENCIA ORIGINAL: Autores (Mantenido para consultar si hace falta)
-    // ------------------------------------------------------------------------
-    author: {
-        create: Joi.object<IAuthor>({
-            name: Joi.string().required().example('Ursula K. Le Guin'),
-            email: Joi.string().email().required().example('leguin@example.com'),
-            password: Joi.string().min(8).required().example('seminari5'),
-            birthDate: Joi.date(),
-            nationality: Joi.string(),
-            biography: Joi.string().max(1000),
-            website: Joi.string().uri(),
-            photoUrl: Joi.string().uri(),
-            active: Joi.boolean(),
-            role: Joi.string().valid('author', 'admin')
-        }),
-        update: Joi.object<IAuthor>({
-            name: Joi.string().required(),
-            email: Joi.string().email().required(),
-            password: Joi.string().min(8).required(),
-            birthDate: Joi.date(),
-            nationality: Joi.string(),
-            biography: Joi.string().max(1000),
-            website: Joi.string().uri(),
-            photoUrl: Joi.string().uri(),
-            active: Joi.boolean(),
-            role: Joi.string().valid('author', 'admin')
-        })
-    },
-
-    // ------------------------------------------------------------------------
-    // REFERENCIA ORIGINAL: Libros (Mantenido para consultar si hace falta)
-    // ------------------------------------------------------------------------
-    book: {
-        create: Joi.object<IBook>({
-            title: Joi.string().required().example('A Wizard of Earthsea'),
-            authors: Joi.array().items(Joi.string().regex(OBJECT_ID)).min(1).required().example(['6ab2d1ad9ada2730451295a7']),
-            isbn: Joi.string().required().example('9788400000008'),
-            edition: Joi.number().min(1),
-            publisher: Joi.string(),
-            publishedYear: Joi.number().min(1450).max(2100),
-            pages: Joi.number().min(1),
-            language: Joi.string().valid(...BOOK_LANGUAGES),
-            tags: Joi.array().items(Joi.string().valid(...BOOK_TAGS)),
-            price: Joi.number().min(0),
-            description: Joi.string().allow('').optional().example('Sinopsis o descripción del libro')
-        }),
-        update: Joi.object<IBook>({
-            title: Joi.string().required(),
-            authors: Joi.array().items(Joi.string().regex(OBJECT_ID)).min(1).required(),
-            isbn: Joi.string().required(),
-            edition: Joi.number().min(1),
-            publisher: Joi.string(),
-            publishedYear: Joi.number().min(1450).max(2100),
-            pages: Joi.number().min(1),
-            language: Joi.string().valid(...BOOK_LANGUAGES),
-            tags: Joi.array().items(Joi.string().valid(...BOOK_TAGS)),
-            price: Joi.number().min(0),
-            description: Joi.string().allow('').optional().example('Sinopsis o descripción del libro')
-        })
-    },
-
     // ------------------------------------------------------------------------
     // AUTENTICACIÓN Y USUARIOS
     // ------------------------------------------------------------------------
@@ -142,7 +84,7 @@ export const Schemas = {
     // ------------------------------------------------------------------------
     activity: {
         create: Joi.object<IActivity>({
-            creatorId: Joi.string().regex(OBJECT_ID).optional(), // Si no viene, el controlador pone req.user.id
+            creatorId: Joi.string().regex(OBJECT_ID).optional(),
             title: Joi.string().required().example('Pachanga 3v3 Baloncesto'),
             description: Joi.string().required().example('Quedada casual para jugar unos partidos'),
             category: Joi.string().valid('SPORT', 'LEISURE').required(),
@@ -150,7 +92,6 @@ export const Schemas = {
             modality: Joi.string().valid('CASUAL', 'ORGANIZED').default('CASUAL'),
             status: Joi.string().valid('OPEN', 'FULL', 'COMPLETED', 'CANCELLED').default('OPEN'),
 
-            // Ubicación GeoJSON Point [longitud, latitud]
             location: Joi.object({
                 type: Joi.string().valid('Point').default('Point'),
                 coordinates: Joi.array().items(Joi.number()).length(2).required().example([2.0003, 41.2755]),
@@ -158,15 +99,18 @@ export const Schemas = {
                 isStoreLocation: Joi.boolean().default(false)
             }).required(),
 
-            // Ruta opcional GeoJSON LineString (Para Running)
             route: Joi.object({
-                distanceKm: Joi.number().min(0).required(),
-                paceTarget: Joi.string().optional(),
+                distanceKm: Joi.number().min(0).optional(),
+                paceTarget: Joi.string().allow('').optional(),
                 path: Joi.object({
                     type: Joi.string().valid('LineString').default('LineString'),
-                    coordinates: Joi.array().items(Joi.array().items(Joi.number()).length(2)).min(2).required()
-                }).required()
-            }).optional(),
+                    coordinates: Joi.array().items(Joi.array().items(Joi.number()).length(2)).min(2).optional()
+                })
+                    .allow(null)
+                    .optional()
+            })
+                .allow(null)
+                .optional(),
 
             schedule: Joi.object({
                 startTime: Joi.date().required(),
@@ -180,7 +124,7 @@ export const Schemas = {
 
             pricing: Joi.object({
                 price: Joi.number().min(0).default(0),
-                prizeInfo: Joi.string().optional()
+                prizeInfo: Joi.string().allow('').optional()
             }).default({ price: 0 }),
 
             participants: Joi.array()
@@ -188,7 +132,7 @@ export const Schemas = {
                     Joi.object({
                         userId: Joi.string().regex(OBJECT_ID).required(),
                         name: Joi.string().required(),
-                        avatarUrl: Joi.string().optional(),
+                        avatarUrl: Joi.string().allow('').optional(),
                         joinedAt: Joi.date().optional()
                     })
                 )
@@ -196,6 +140,7 @@ export const Schemas = {
         }),
 
         update: Joi.object<IActivity>({
+            creatorId: Joi.string().regex(OBJECT_ID).optional(),
             title: Joi.string().optional(),
             description: Joi.string().optional(),
             category: Joi.string().valid('SPORT', 'LEISURE').optional(),
@@ -212,12 +157,16 @@ export const Schemas = {
 
             route: Joi.object({
                 distanceKm: Joi.number().min(0).optional(),
-                paceTarget: Joi.string().optional(),
+                paceTarget: Joi.string().allow('').optional(),
                 path: Joi.object({
                     type: Joi.string().valid('LineString').default('LineString'),
                     coordinates: Joi.array().items(Joi.array().items(Joi.number()).length(2)).min(2).optional()
-                }).optional()
-            }).optional(),
+                })
+                    .allow(null)
+                    .optional()
+            })
+                .allow(null)
+                .optional(),
 
             schedule: Joi.object({
                 startTime: Joi.date().optional(),
@@ -235,6 +184,28 @@ export const Schemas = {
             }).optional(),
 
             participants: Joi.array().optional()
+        }).min(1)
+    },
+
+    // ------------------------------------------------------------------------
+    // REPORTES DE MODERACIÓN
+    // ------------------------------------------------------------------------
+    report: {
+        create: Joi.object<IReport>({
+            reporterId: Joi.string().regex(OBJECT_ID).optional(),
+            targetType: Joi.string().valid('ACTIVITY', 'USER').required(),
+            targetId: Joi.string().regex(OBJECT_ID).required(),
+            reason: Joi.string().valid('SPAM', 'INAPPROPRIATE', 'NO_SHOW', 'FAKE_LOCATION', 'OTHER').required(),
+            description: Joi.string().min(5).max(1000).required(),
+            status: Joi.string().valid('PENDING', 'REVIEWED', 'RESOLVED', 'DISMISSED').default('PENDING'),
+            adminNotes: Joi.string().max(500).allow('').optional()
+        }),
+
+        update: Joi.object<Partial<IReport>>({
+            status: Joi.string().valid('PENDING', 'REVIEWED', 'RESOLVED', 'DISMISSED').optional(),
+            adminNotes: Joi.string().max(500).allow('').optional(),
+            reason: Joi.string().valid('SPAM', 'INAPPROPRIATE', 'NO_SHOW', 'FAKE_LOCATION', 'OTHER').optional(),
+            description: Joi.string().min(5).max(1000).optional()
         }).min(1)
     }
 };

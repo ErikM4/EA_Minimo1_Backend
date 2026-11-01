@@ -9,8 +9,6 @@ import { config } from './config';
 
 // Los esquemas del body salen de los mismos esquemas de Joi que validan las
 // peticiones, así que no se pueden quedar desfasados.
-const { swagger: authorInput } = j2s(Schemas.author.create);
-const { swagger: bookInput } = j2s(Schemas.book.create);
 const { swagger: registerInput } = j2s(Schemas.auth.register);
 const { swagger: loginInput } = j2s(Schemas.auth.login);
 const { swagger: userInput } = j2s(Schemas.user.create);
@@ -24,55 +22,12 @@ const storedFields = {
     updatedAt: { type: 'string', format: 'date-time' }
 };
 
-const { password: _password, ...authorFields } = authorInput.properties;
-
-const authorSchema = { type: 'object', properties: { ...storedFields, ...authorFields } };
-
-const bookSchema = {
-    type: 'object',
-    properties: {
-        ...storedFields,
-        ...bookInput.properties,
-        authors: { type: 'array', items: authorSchema }
-    }
-};
-
 // El usuario nunca devuelve la contraseña ni el refreshTokenHash
 const { password: _userPassword, ...userFields } = userInput.properties;
 
 const userSchema = { type: 'object', properties: { ...storedFields, ...userFields } };
 
 // Ejemplos que se ven en la página de Swagger, sacados de los datos de npm run seed
-const authorExample = {
-    _id: '6ab3f2fe9c500204a7d5f801',
-    name: 'Ursula K. Le Guin',
-    email: 'leguin@example.com',
-    birthDate: '1929-10-21T00:00:00.000Z',
-    nationality: 'Estados Unidos',
-    biography: 'Escritora de ciencia ficción y fantasía conocida por Terramar.',
-    website: 'https://example.com/leguin',
-    photoUrl: 'https://example.com/fotos/leguin.jpg',
-    active: true,
-    role: 'author',
-    createdAt: '2026-09-23T10:00:00.000Z',
-    updatedAt: '2026-09-23T10:00:00.000Z'
-};
-
-const bookExample = {
-    _id: '6ab3f2fe9c500204a7d5f80b',
-    title: 'A Wizard of Earthsea',
-    authors: [authorExample],
-    isbn: '9788400000008',
-    edition: 1,
-    publisher: 'Editorial Ejemplo',
-    publishedYear: 1968,
-    pages: 183,
-    language: 'en',
-    tags: ['fantasia'],
-    price: 16,
-    createdAt: '2026-09-23T10:00:00.000Z',
-    updatedAt: '2026-09-23T10:00:00.000Z'
-};
 
 const userExample = {
     _id: '6ab3f2fe9c500204a7d5f8aa',
@@ -117,9 +72,7 @@ const swaggerDocument = swaggerJsdoc({
         tags: [
             { name: 'Health', description: 'Comprobar que la API responde' },
             { name: 'Auth', description: 'Registro, inicio y cierre de sesión' },
-            { name: 'Users', description: 'Gestión de usuarios (solo admin)' },
-            { name: 'Authors', description: 'Autores' },
-            { name: 'Books', description: 'Libros' }
+            { name: 'Users', description: 'Gestión de usuarios (solo admin)' }
         ],
         // Pone el candado en todas las rutas. Las de /auth y /ping lo quitan con security: []
         security: [{ bearerAuth: [] }],
@@ -128,21 +81,13 @@ const swaggerDocument = swaggerJsdoc({
                 bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }
             },
             schemas: {
-                AuthorInput: authorInput,
-                BookInput: bookInput,
                 RegisterInput: registerInput,
                 LoginInput: loginInput,
                 UserInput: userInput,
                 UserUpdateInput: userUpdateInput,
-                Author: authorSchema,
-                Book: bookSchema,
                 User: userSchema
             },
             responses: {
-                AuthorOne: okResponse('Un autor', { type: 'object', properties: { author: authorSchema } }, { author: authorExample }),
-                AuthorList: okResponse('La lista de autores', { type: 'object', properties: { authors: { type: 'array', items: authorSchema } } }, { authors: [authorExample] }),
-                BookOne: okResponse('Un libro, con los datos de sus autores', { type: 'object', properties: { book: bookSchema } }, { book: bookExample }),
-                BookList: okResponse('La lista de libros, con los datos de sus autores', { type: 'object', properties: { books: { type: 'array', items: bookSchema } } }, { books: [bookExample] }),
                 UserOne: okResponse('Un usuario', { type: 'object', properties: { user: userSchema } }, { user: userExample }),
                 UserList: okResponse('La lista de usuarios', { type: 'object', properties: { users: { type: 'array', items: userSchema } } }, { users: [userExample] }),
                 LoginOk: okResponse(
@@ -150,18 +95,18 @@ const swaggerDocument = swaggerJsdoc({
                     { type: 'object', properties: { token: { type: 'string' }, user: userSchema } },
                     { token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...', user: userExample }
                 ),
-                BadRequest: errorResponse('El id de la URL no tiene forma de id de MongoDB', 'authorId no es un id válido'),
+                BadRequest: errorResponse('El id de la URL no tiene forma de id de MongoDB', 'userId no es un id válido'),
                 BadCredentials: errorResponse('Email o contraseña incorrectos', 'Email o contraseña incorrectos'),
                 Unauthorized: errorResponse('Falta el token, está caducado o no es válido', 'Falta el token'),
                 Forbidden: errorResponse('El usuario no tiene el rol necesario (hace falta admin)', 'No tienes permiso para hacer esto'),
                 NotFound: errorResponse('No existe ningún recurso con ese id', 'not found'),
-                Conflict: errorResponse('Ya existe otro recurso con ese email o ese ISBN', 'email ya existe'),
+                Conflict: errorResponse('Ya existe otro recurso con ese email', 'email ya existe'),
                 Unprocessable: errorResponse('El body no cumple el esquema', '"email" is required'),
                 ServerError: errorResponse('Error inesperado del servidor', 'Internal server error')
             }
         }
     },
-    
+
     apis: [
         swaggerPath(path.join(__dirname, '../routes/*.ts')),
         swaggerPath(path.join(__dirname, '../routes/*.js')),

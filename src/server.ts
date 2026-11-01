@@ -6,8 +6,6 @@ import { Cors } from './middleware/Cors';
 import Logging from './library/Logging';
 import Logger from './middleware/Logger';
 import ErrorHandler from './middleware/ErrorHandler';
-import authorRoutes from './routes/Author';
-import bookRoutes from './routes/Book';
 import swaggerUi from 'swagger-ui-express'; // permite mostrar Swagger en el navegador.
 import swaggerDocument from './config/swagger'; // importa el documento que hemos creado en swagger.ts
 import cookieParser from 'cookie-parser';
@@ -15,6 +13,7 @@ import cors from 'cors';
 import authRoutes from './routes/Auth';
 import userRoutes from './routes/User';
 import activityRoutes from './routes/Activity';
+import reportRoutes from './routes/Report';
 
 const router = express();
 
@@ -43,8 +42,7 @@ const StartServer = () => {
     router.use('/auth', authRoutes);
     router.use('/users', userRoutes);
     router.use('/activities', activityRoutes);
-    router.use('/authors', authorRoutes);
-    router.use('/books', bookRoutes);
+    router.use('/reports', reportRoutes);
     router.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
     /** Healthcheck */

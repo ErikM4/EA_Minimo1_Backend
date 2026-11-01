@@ -1,12 +1,12 @@
-import { IAuthor } from './models/Author';
-import { IBook } from './models/Book';
 import { IUser } from './models/User';
 import { IActivity } from './models/Activity';
+import { IReport } from './models/Report';
 
-// Datos de ejemplo para llenar la base de datos.
-// Los correos, las webs, los ISBN y los precios son inventados.
-// Las contraseñas están sin cifrar: cifrarlas es la tarea del hook pre-save (ver CONTRIBUTING).
-// Contraseña por defecto para todas las cuentas de prueba: "sprint1" (se cifrará con el hook pre-save)
+// ============================================================================
+// 1. USUARIOS (PROYECTO FINAL)
+// Roles: ADMIN, STORE_HOST, USER
+// Contraseña por defecto: "sprint1" (hasheada por el hook pre-save de User)
+// ============================================================================
 export const SEED_USERS: Partial<IUser>[] = [
     {
         name: 'Admin General',
@@ -38,7 +38,10 @@ export const SEED_USERS: Partial<IUser>[] = [
     }
 ];
 
-// Función auxiliar para construir el array de actividades tras crear los usuarios
+// ============================================================================
+// 2. ACTIVIDADES (PROYECTO FINAL)
+// Coordenadas GeoJSON Point [Longitud, Latitud] y LineString para rutas
+// ============================================================================
 export const getSeedActivities = (adminId: string, storeId: string, userId: string): Partial<IActivity>[] => [
     {
         creatorId: userId,
@@ -50,12 +53,12 @@ export const getSeedActivities = (adminId: string, storeId: string, userId: stri
         status: 'OPEN',
         location: {
             type: 'Point',
-            coordinates: [2.0003, 41.2755], // [Longitud, Latitud]
+            coordinates: [2.0003, 41.2755],
             addressName: 'Pistas Campus PMT UPC, Castelldefels',
             isStoreLocation: false
         },
         schedule: {
-            startTime: new Date(Date.now() + 86400000), // Mañana
+            startTime: new Date(Date.now() + 86400000), // En 24h
             endTime: new Date(Date.now() + 93600000)
         },
         capacity: {
@@ -88,7 +91,7 @@ export const getSeedActivities = (adminId: string, storeId: string, userId: stri
             isStoreLocation: true
         },
         schedule: {
-            startTime: new Date(Date.now() + 172800000), // En 2 días
+            startTime: new Date(Date.now() + 172800000), // En 48h
             endTime: new Date(Date.now() + 187200000)
         },
         capacity: {
@@ -128,7 +131,7 @@ export const getSeedActivities = (adminId: string, storeId: string, userId: stri
             }
         },
         schedule: {
-            startTime: new Date(Date.now() + 259200000),
+            startTime: new Date(Date.now() + 259200000), // En 72h
             endTime: new Date(Date.now() + 262800000)
         },
         capacity: {
@@ -142,42 +145,26 @@ export const getSeedActivities = (adminId: string, storeId: string, userId: stri
     }
 ];
 
-export const authorsSeed: IAuthor[] = [
+// ============================================================================
+// 3. REPORTES DE MODERACIÓN (PROYECTO FINAL)
+// Vinculados a los IDs generados dinámicamente en el seed
+// ============================================================================
+export const getSeedReports = (reporterId: string, activityId: string): Partial<IReport>[] => [
     {
-        name: 'Miguel de Cervantes',
-        email: 'cervantes@example.com',
-        password: 'seminari5',
-        birthDate: new Date('1547-09-29'),
-        nationality: 'España',
-        biography: 'Autor de El Quijote, la novela más conocida de la literatura española.',
-        website: 'https://example.com/cervantes',
-        photoUrl: 'https://example.com/fotos/cervantes.jpg',
-        role: 'author',
-        deleted: false
-    }
-];
-
-// Cada libro dice de qué autores es con sus emails. El script del seed los cambia
-// por los ids que MongoDB les ha dado.
-// El campo 'deleted' tampoco se indica aquí: el esquema del libro lo pone en false por defecto.
-export type BookSeed = Omit<IBook, 'authors' | 'deleted'> & { authorEmails: string[] };
-
-export const booksSeed: BookSeed[] = [
+        reporterId: reporterId,
+        targetType: 'ACTIVITY',
+        targetId: activityId,
+        reason: 'SPAM',
+        description: 'Evento publicado de forma duplicada varias veces en el mismo día.',
+        status: 'PENDING'
+    },
     {
-        title: 'Don Quijote de la Mancha',
-        authorEmails: ['cervantes@example.com'],
-        isbn: '9788400000001',
-        edition: 3,
-        publisher: 'Editorial Ejemplo',
-        publishedYear: 1605,
-        pages: 863,
-        language: 'es',
-        tags: ['novela'],
-        price: 19.9,
-        description: [
-            'En un lugar de la Mancha vive Alonso Quijano, un hidalgo apasionado por las novelas de caballerías hasta el punto de perder el juicio y creerse él mismo un caballero andante. Rebautizado como don Quijote de la Mancha y a lomos de su caballo Rocinante, decide lanzarse a los caminos en busca de aventuras, honra y justicia para consagrar sus hazañas a su amada Dulcinea del Toboso.',
-            'Acompañado por el ingenuo pero pragmático campesino Sancho Panza, convertido en su fiel escudero, la pareja protagoniza una sucesión de desventuras cómicas y conmovedoras, transformando ventas en castillos, molinos de viento en gigantes amenazantes y rebaños de ovejas en ejércitos formidables.',
-            'Obra cumbre de la literatura española y precursora indiscutible de la novela moderna, Cervantes teje una reflexión magistral sobre el choque entre los ideales heroicos y la cruda realidad del mundo cotidiano.'
-        ].join('\n\n')
+        reporterId: reporterId,
+        targetType: 'USER',
+        targetId: reporterId,
+        reason: 'INAPPROPRIATE',
+        description: 'Comportamiento inadecuado en el chat del grupo.',
+        status: 'REVIEWED',
+        adminNotes: 'En revisión por el equipo de soporte.'
     }
 ];

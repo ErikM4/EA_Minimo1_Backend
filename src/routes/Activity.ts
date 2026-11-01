@@ -55,7 +55,7 @@ const router = express.Router();
  *               example: [2.0003, 41.2755]
  *             addressName:
  *               type: string
- *               example: "Pistas UPC Castelldefels"
+ *               example: "Pistas Campus PMT UPC, Castelldefels"
  *             isStoreLocation:
  *               type: boolean
  *               default: false
@@ -125,6 +125,83 @@ const router = express.Router();
  *           type: string
  *           format: date-time
  *           readOnly: true
+ *     ActivityUpdateInput:
+ *       type: object
+ *       properties:
+ *         title:
+ *           type: string
+ *           example: "Pachanga 3v3 Baloncesto (Horario Modificado)"
+ *         description:
+ *           type: string
+ *           example: "Se ajusta la hora de inicio por disponibilidad de pista"
+ *         category:
+ *           type: string
+ *           enum: [SPORT, LEISURE]
+ *         subcategory:
+ *           type: string
+ *           enum: [BASKETBALL, RUNNING, ARCADE, TCG_BOARDGAMES]
+ *         modality:
+ *           type: string
+ *           enum: [CASUAL, ORGANIZED]
+ *         status:
+ *           type: string
+ *           enum: [OPEN, FULL, COMPLETED, CANCELLED]
+ *         location:
+ *           type: object
+ *           properties:
+ *             type:
+ *               type: string
+ *               default: "Point"
+ *             coordinates:
+ *               type: array
+ *               items: { type: number }
+ *               example: [2.0003, 41.2755]
+ *             addressName:
+ *               type: string
+ *               example: "Pistas Campus PMT UPC, Castelldefels"
+ *             isStoreLocation:
+ *               type: boolean
+ *         route:
+ *           type: object
+ *           properties:
+ *             distanceKm:
+ *               type: number
+ *             paceTarget:
+ *               type: string
+ *             path:
+ *               type: object
+ *               properties:
+ *                 type: { type: string, default: "LineString" }
+ *                 coordinates:
+ *                   type: array
+ *                   items:
+ *                     type: array
+ *                     items: { type: number }
+ *         schedule:
+ *           type: object
+ *           properties:
+ *             startTime:
+ *               type: string
+ *               format: date-time
+ *               example: "2026-11-10T17:30:00.000Z"
+ *             endTime:
+ *               type: string
+ *               format: date-time
+ *               example: "2026-11-10T19:30:00.000Z"
+ *         capacity:
+ *           type: object
+ *           properties:
+ *             minParticipants:
+ *               type: integer
+ *             maxParticipants:
+ *               type: integer
+ *         pricing:
+ *           type: object
+ *           properties:
+ *             price:
+ *               type: number
+ *             prizeInfo:
+ *               type: string
  */
 
 /**
@@ -145,11 +222,11 @@ const router = express.Router();
  *       201:
  *         description: Actividad creada exitosamente
  *       400:
- *         description: Datos requeridos no válidos
+ *         description: Parámetros inválidos
  *       401:
  *         description: No autorizado
  *       422:
- *         description: Error de validación de esquema Joi (coordenadas o fechas incorrectas)
+ *         description: Error de validación de Joi
  */
 router.post('/', VerifyToken, ValidateJoi(Schemas.activity.create), controller.createActivity);
 
@@ -169,7 +246,6 @@ router.post('/', VerifyToken, ValidateJoi(Schemas.activity.create), controller.c
  *       - in: query
  *         name: search
  *         schema: { type: string }
- *         description: Filtra por título, descripción o nombre del lugar
  *       - in: query
  *         name: category
  *         schema: { type: string, enum: [SPORT, LEISURE] }
@@ -184,7 +260,7 @@ router.post('/', VerifyToken, ValidateJoi(Schemas.activity.create), controller.c
  *         schema: { type: boolean, default: false }
  *     responses:
  *       200:
- *         description: Listado paginado devuelto con éxito
+ *         description: Listado devuelto con éxito
  */
 router.get('/', controller.readAllPaginated);
 
@@ -201,9 +277,9 @@ router.get('/', controller.readAllPaginated);
  *         schema: { type: string }
  *     responses:
  *       200:
- *         description: Detalle de la actividad encontrado
+ *         description: Detalle de la actividad
  *       400:
- *         description: ID no válido
+ *         description: Formato de ID inválido
  *       404:
  *         description: Actividad no encontrada
  */
@@ -227,14 +303,18 @@ router.get('/:activityId', ValidateId('activityId'), controller.readActivity);
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Activity'
+ *             $ref: '#/components/schemas/ActivityUpdateInput'
  *     responses:
  *       200:
  *         description: Actividad actualizada correctamente
  *       400:
- *         description: Petición con datos o formato de ID no válidos
+ *         description: Formato de ID inválido
+ *       401:
+ *         description: No autorizado
  *       404:
  *         description: Actividad no encontrada
+ *       422:
+ *         description: Parámetros del body no permitidos o inválidos
  */
 router.put('/:activityId', VerifyToken, ValidateId('activityId'), ValidateJoi(Schemas.activity.update), controller.updateActivity);
 
@@ -259,7 +339,9 @@ router.put('/:activityId', VerifyToken, ValidateId('activityId'), ValidateJoi(Sc
  *                 items: { type: string }
  *     responses:
  *       204:
- *         description: Actividades marcadas como eliminadas
+ *         description: Actividades archivadas lógicamente
+ *       400:
+ *         description: Lista de IDs requerida
  */
 router.patch('/bulk-soft-delete', VerifyToken, controller.bulkSoftDelete);
 
@@ -268,7 +350,7 @@ router.patch('/bulk-soft-delete', VerifyToken, controller.bulkSoftDelete);
  * /activities/bulk:
  *   delete:
  *     tags: [Activities]
- *     summary: Borrado físico masivo de actividades (Admin)
+ *     summary: Borrado físico masivo de actividades
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -284,7 +366,7 @@ router.patch('/bulk-soft-delete', VerifyToken, controller.bulkSoftDelete);
  *                 items: { type: string }
  *     responses:
  *       204:
- *         description: Actividades eliminadas físicamente de la BD
+ *         description: Actividades eliminadas de la BD
  */
 router.delete('/bulk', VerifyToken, controller.bulkHardDelete);
 
@@ -314,7 +396,7 @@ router.patch('/:activityId/soft-delete', VerifyToken, ValidateId('activityId'), 
  * /activities/{activityId}:
  *   delete:
  *     tags: [Activities]
- *     summary: Borrado físico definitivo de una actividad
+ *     summary: Borrado físico de una actividad
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -324,7 +406,7 @@ router.patch('/:activityId/soft-delete', VerifyToken, ValidateId('activityId'), 
  *         schema: { type: string }
  *     responses:
  *       204:
- *         description: Actividad eliminada físicamente de la BD
+ *         description: Actividad eliminada físicamente
  *       404:
  *         description: Actividad no encontrada
  */
