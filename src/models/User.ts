@@ -5,21 +5,24 @@ import { hashPassword } from '../utils/password';
 
 // Roles que puede tener un usuario.
 // admin gestiona el backoffice (autores y libros); user solo puede usar el chat.
-export const USER_ROLES = ['USER', 'ADMIN'] as const;
+export const USER_ROLES = ['USER', 'ADMIN', 'STORE_HOST'] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
 // Definimos los datos que puede tener un usuario.
 // Un usuario es quien inicia sesion en la aplicacion; no tiene nada que ver con los autores de los libros.
 export interface IUser {
     name: string;
-
     email: string;
-
     password: string;
-
     role: UserRole;
-    // EXPLICAR EN EL VÍDEO
+    avatarUrl?: string;
+    bio?: string;
+    isBanned: boolean;
     refreshTokenHash?: string | null;
+
+    // Campos obligatorios para Soft Delete
+    deleted: boolean;
+    deletedAt?: Date | null;
 }
 
 // ---- Interfaces de la autenticacion con JWT ----
@@ -56,15 +59,23 @@ const UserSchema: Schema = new Schema(
 
         // El email es con lo que se inicia sesion, asi que no puede repetirse.
         // Lo guardamos en minusculas para que Ana@example.com y ana@example.com sean el mismo
-        email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+        email: { type: String, required: true, lowercase: true, trim: true },
 
         // La contraseña se guarda cifrada (ver el hook de abajo) y no sale en las consultas:
         // para leerla hay que pedirla a proposito con .select('+password')
         password: { type: String, required: true, select: false },
 
         // Si no se indica, un usuario nuevo es user. Los admin se crean con el seed
-        role: { type: String, enum: USER_ROLES, default: 'user' },
-        // EXPLICAR EN EL VÍDEO
+        role: { type: String, enum: USER_ROLES, default: 'USER' },
+        avatarUrl: { type: String, default: null },
+        bio: { type: String, default: null },
+        isBanned: { type: Boolean, default: false },
+
+        // Campos obligatorios para Soft Delete
+        deleted: { type: Boolean, default: false },
+        deletedAt: { type: Date, default: null },
+
+        // Guardamos el hash del refresh token para poder invalidarlo si el usuario cierra sesion
         refreshTokenHash: { type: String, select: false, default: null }
     },
     {
@@ -85,6 +96,9 @@ const UserSchema: Schema = new Schema(
         }
     }
 );
+
+//Índice único parcial: permite registrar de nuevo un email si el usuario fue borrado lógicamente (deleted=true)
+UserSchema.index({ email: 1 }, { unique: true, partialFilterExpression: { deleted: false } });
 
 // Este hook se ejecuta antes de guardar un usuario en la base de datos
 UserSchema.pre('save', async function () {
