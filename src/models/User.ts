@@ -5,7 +5,7 @@ import { hashPassword } from '../utils/password';
 
 // Roles que puede tener un usuario.
 // admin gestiona el backoffice (autores y libros); user solo puede usar el chat.
-export const USER_ROLES = ['user', 'admin'] as const;
+export const USER_ROLES = ['USER', 'ADMIN'] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
 // Definimos los datos que puede tener un usuario.
