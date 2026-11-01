@@ -192,13 +192,13 @@ user: {
         name: Joi.string().min(2).required(),
         email: Joi.string().email().required(),
         password: Joi.string().min(6).required(),
-        role: Joi.string().valid('user', 'admin').default('user'),
+        role: Joi.string().valid('USER', 'ADMIN').default('USER'),
     }),
     update: Joi.object({
         name: Joi.string().min(2),
         email: Joi.string().email(),
         password: Joi.string().min(6),
-        role: Joi.string().valid('user', 'admin'),
+        role: Joi.string().valid('USER', 'ADMIN'),
     }).min(1),
 },
 

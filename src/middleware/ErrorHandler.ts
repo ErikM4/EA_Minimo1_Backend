@@ -63,6 +63,21 @@ export const ErrorHandler: ErrorRequestHandler = (error: DatabaseError, req, res
         return res.status(404).json({ message: error.message });
     }
 
+    // Errores de la libreria jsonwebtoken. Los dos son un 401: no hay una sesion valida
+    // TokenExpiredError: el token estaba bien firmado pero ya ha caducado (exp).
+    // El front renueva el token solo cuando recibe exactamente este mensaje.
+    if (error.name === 'TokenExpiredError') {
+
+        return res.status(401).json({ message: 'El token ha caducado' });
+    }
+
+    // JsonWebTokenError: la firma no coincide o el token esta mal formado.
+    // Renovar no arregla esto, asi que el front cierra la sesion.
+    if (error.name === 'JsonWebTokenError' || error.name === 'NotBeforeError') {
+
+        return res.status(401).json({ message: 'Token no válido' });
+    }
+
     // Si tenemos un codigo de error entre 400 y 499 usamos ese codigo
     // Si no hay ninguno valido devolvemos un 500 porque es un error interno
     const status = error.status && error.status >= 400 && error.status < 500 ? error.status : 500;
