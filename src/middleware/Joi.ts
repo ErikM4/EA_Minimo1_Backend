@@ -200,6 +200,32 @@ export const Schemas = {
             status: Joi.string().valid('PENDING', 'REVIEWED', 'RESOLVED', 'DISMISSED').default('PENDING'),
             adminNotes: Joi.string().max(500).allow('').optional()
         }),
+    auth: {
+  register: Joi.object({
+    name: Joi.string().min(2).required(),
+    email: Joi.string().email().required(),
+    password: Joi.string().min(6).required(),
+  }),
+  login: Joi.object({
+    email: Joi.string().email().required(),
+    password: Joi.string().required(),
+  }),
+},
+
+user: {
+    create: Joi.object({
+        name: Joi.string().min(2).required(),
+        email: Joi.string().email().required(),
+        password: Joi.string().min(6).required(),
+        role: Joi.string().valid('USER', 'ADMIN').default('USER'),
+    }),
+    update: Joi.object({
+        name: Joi.string().min(2),
+        email: Joi.string().email(),
+        password: Joi.string().min(6),
+        role: Joi.string().valid('USER', 'ADMIN'),
+    }).min(1),
+},
 
         update: Joi.object<Partial<IReport>>({
             status: Joi.string().valid('PENDING', 'REVIEWED', 'RESOLVED', 'DISMISSED').optional(),
