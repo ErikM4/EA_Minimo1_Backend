@@ -1,241 +1,170 @@
-import { IAuthor } from './models/Author';
-import { IBook } from './models/Book';
+import { IUser } from './models/User';
+import { IActivity } from './models/Activity';
+import { IReport } from './models/Report';
 
-// Datos de ejemplo para llenar la base de datos.
-// Los correos, las webs, los ISBN y los precios son inventados.
-// Las contraseñas están sin cifrar: cifrarlas es la tarea del hook pre-save (ver CONTRIBUTING).
-export const usersSeed = [
+// ============================================================================
+// 1. USUARIOS (PROYECTO FINAL)
+// Roles: ADMIN, STORE_HOST, USER
+// Contraseña por defecto: "sprint1" (hasheada por el hook pre-save de User)
+// ============================================================================
+export const SEED_USERS: Partial<IUser>[] = [
     {
-        name: 'Admin',
-        email: 'admin@example.com',
+        name: 'Admin General',
+        email: 'admin@app.com',
         password: 'sprint1',
-        role: 'admin',
-        deleted: false
+        role: 'ADMIN',
+        bio: 'Administrador principal del Backoffice'
+    },
+    {
+        name: 'Goblin Games Store',
+        email: 'tienda@goblingames.com',
+        password: 'sprint1',
+        role: 'STORE_HOST',
+        bio: 'Tienda especializada en TCG y juegos de mesa'
+    },
+    {
+        name: 'Marc R.',
+        email: 'marc@usuario.com',
+        password: 'sprint1',
+        role: 'USER',
+        bio: 'Aficionado al baloncesto y running'
+    },
+    {
+        name: 'Laura S.',
+        email: 'laura@usuario.com',
+        password: 'sprint1',
+        role: 'USER',
+        bio: 'Jugadora de cartas coleccionables'
     }
 ];
 
-export const authorsSeed: IAuthor[] = [
+// ============================================================================
+// 2. ACTIVIDADES (PROYECTO FINAL)
+// Coordenadas GeoJSON Point [Longitud, Latitud] y LineString para rutas
+// ============================================================================
+export const getSeedActivities = (adminId: string, storeId: string, userId: string): Partial<IActivity>[] => [
     {
-        name: 'Miguel de Cervantes',
-        email: 'cervantes@example.com',
-        password: 'seminari5',
-        birthDate: new Date('1547-09-29'),
-        nationality: 'España',
-        biography: 'Autor de El Quijote, la novela más conocida de la literatura española.',
-        website: 'https://example.com/cervantes',
-        photoUrl: 'https://example.com/fotos/cervantes.jpg',
-        role: 'author',
-        deleted: false
+        creatorId: userId,
+        title: 'Pachanga 3v3 Baloncesto UPC',
+        description: 'Buscamos 2 personas más para completar partido casual de basket en las pistas exteriores.',
+        category: 'SPORT',
+        subcategory: 'BASKETBALL',
+        modality: 'CASUAL',
+        status: 'OPEN',
+        location: {
+            type: 'Point',
+            coordinates: [2.0003, 41.2755],
+            addressName: 'Pistas Campus PMT UPC, Castelldefels',
+            isStoreLocation: false
+        },
+        schedule: {
+            startTime: new Date(Date.now() + 86400000), // En 24h
+            endTime: new Date(Date.now() + 93600000)
+        },
+        capacity: {
+            minParticipants: 4,
+            maxParticipants: 6
+        },
+        pricing: {
+            price: 0
+        },
+        participants: [
+            {
+                userId: userId,
+                name: 'Marc R.',
+                joinedAt: new Date()
+            }
+        ]
     },
     {
-        name: 'Jorge Luis Borges',
-        email: 'borges@example.com',
-        password: 'seminari5',
-        birthDate: new Date('1899-08-24'),
-        nationality: 'Argentina',
-        biography: 'Escritor de cuentos y ensayos sobre laberintos, espejos y bibliotecas.',
-        website: 'https://example.com/borges',
-        photoUrl: 'https://example.com/fotos/borges.jpg',
-        role: 'author',
-        deleted: false
+        creatorId: storeId,
+        title: 'Torneo Local One Piece TCG',
+        description: 'Torneo semanal en tienda física. Construido a 50 cartas. Premios para el TOP 4.',
+        category: 'LEISURE',
+        subcategory: 'TCG_BOARDGAMES',
+        modality: 'ORGANIZED',
+        status: 'OPEN',
+        location: {
+            type: 'Point',
+            coordinates: [2.17, 41.387],
+            addressName: 'Carrer Major 15, Goblin Games',
+            isStoreLocation: true
+        },
+        schedule: {
+            startTime: new Date(Date.now() + 172800000), // En 48h
+            endTime: new Date(Date.now() + 187200000)
+        },
+        capacity: {
+            minParticipants: 8,
+            maxParticipants: 16
+        },
+        pricing: {
+            price: 5.0,
+            prizeInfo: 'Sobres de expansión para los mejores clasificados'
+        },
+        participants: []
     },
     {
-        name: 'Mercè Rodoreda',
-        email: 'rodoreda@example.com',
-        password: 'seminari5',
-        birthDate: new Date('1908-10-10'),
-        nationality: 'España',
-        biography: 'Una de las voces más importantes de la narrativa en catalán del siglo XX.',
-        website: 'https://example.com/rodoreda',
-        photoUrl: 'https://example.com/fotos/rodoreda.jpg',
-        role: 'author',
-        deleted: false
-    },
-    {
-        name: 'Ursula K. Le Guin',
-        email: 'leguin@example.com',
-        password: 'seminari5',
-        birthDate: new Date('1929-10-21'),
-        nationality: 'Estados Unidos',
-        biography: 'Escritora de ciencia ficción y fantasía conocida por Terramar.',
-        website: 'https://example.com/leguin',
-        photoUrl: 'https://example.com/fotos/leguin.jpg',
-        role: 'author',
-        deleted: false
-    },
-    {
-        name: 'Isaac Asimov',
-        email: 'asimov@example.com',
-        password: 'seminari5',
-        birthDate: new Date('1920-01-02'),
-        nationality: 'Estados Unidos',
-        biography: 'Autor de la saga de la Fundación y de las tres leyes de la robótica.',
-        website: 'https://example.com/asimov',
-        photoUrl: 'https://example.com/fotos/asimov.jpg',
-        role: 'admin',
-        deleted: false
+        creatorId: userId,
+        title: 'Entrenamiento Running 5K Paseo Marítimo',
+        description: 'Salida suave a ritmo de 5:30 min/km por el paseo marítimo.',
+        category: 'SPORT',
+        subcategory: 'RUNNING',
+        modality: 'CASUAL',
+        status: 'OPEN',
+        location: {
+            type: 'Point',
+            coordinates: [1.98, 41.265],
+            addressName: 'Monumento Rosa dels Vents',
+            isStoreLocation: false
+        },
+        route: {
+            distanceKm: 5.2,
+            paceTarget: '5:30 min/km',
+            path: {
+                type: 'LineString',
+                coordinates: [
+                    [1.98, 41.265],
+                    [1.985, 41.267],
+                    [1.99, 41.269]
+                ]
+            }
+        },
+        schedule: {
+            startTime: new Date(Date.now() + 259200000), // En 72h
+            endTime: new Date(Date.now() + 262800000)
+        },
+        capacity: {
+            minParticipants: 2,
+            maxParticipants: 10
+        },
+        pricing: {
+            price: 0
+        },
+        participants: []
     }
 ];
 
-// Cada libro dice de qué autores es con sus emails. El script del seed los cambia
-// por los ids que MongoDB les ha dado.
-// El campo 'deleted' tampoco se indica aquí: el esquema del libro lo pone en false por defecto.
-export type BookSeed = Omit<IBook, 'authors' | 'deleted'> & { authorEmails: string[] };
-
-export const booksSeed: BookSeed[] = [
+// ============================================================================
+// 3. REPORTES DE MODERACIÓN (PROYECTO FINAL)
+// Vinculados a los IDs generados dinámicamente en el seed
+// ============================================================================
+export const getSeedReports = (reporterId: string, activityId: string): Partial<IReport>[] => [
     {
-        title: 'Don Quijote de la Mancha',
-        authorEmails: ['cervantes@example.com'],
-        isbn: '9788400000001',
-        edition: 3,
-        publisher: 'Editorial Ejemplo',
-        publishedYear: 1605,
-        pages: 863,
-        language: 'es',
-        tags: ['novela'],
-        price: 19.9,
-        description: [
-            'En un lugar de la Mancha vive Alonso Quijano, un hidalgo apasionado por las novelas de caballerías hasta el punto de perder el juicio y creerse él mismo un caballero andante. Rebautizado como don Quijote de la Mancha y a lomos de su caballo Rocinante, decide lanzarse a los caminos en busca de aventuras, honra y justicia para consagrar sus hazañas a su amada Dulcinea del Toboso.',
-            'Acompañado por el ingenuo pero pragmático campesino Sancho Panza, convertido en su fiel escudero, la pareja protagoniza una sucesión de desventuras cómicas y conmovedoras, transformando ventas en castillos, molinos de viento en gigantes amenazantes y rebaños de ovejas en ejércitos formidables.',
-            'Obra cumbre de la literatura española y precursora indiscutible de la novela moderna, Cervantes teje una reflexión magistral sobre el choque entre los ideales heroicos y la cruda realidad del mundo cotidiano.'
-        ].join('\n\n')
+        reporterId: reporterId,
+        targetType: 'ACTIVITY',
+        targetId: activityId,
+        reason: 'SPAM',
+        description: 'Evento publicado de forma duplicada varias veces en el mismo día.',
+        status: 'PENDING'
     },
     {
-        title: 'Novelas ejemplares',
-        authorEmails: ['cervantes@example.com'],
-        isbn: '9788400000002',
-        edition: 1,
-        publisher: 'Editorial Ejemplo',
-        publishedYear: 1613,
-        pages: 480,
-        language: 'es',
-        tags: ['novela'],
-        price: 14.5
-    },
-    {
-        title: 'Ficciones',
-        authorEmails: ['borges@example.com'],
-        isbn: '9788400000003',
-        edition: 2,
-        publisher: 'Editorial Ejemplo',
-        publishedYear: 1944,
-        pages: 203,
-        language: 'es',
-        tags: ['novela', 'fantasia'],
-        price: 12.0
-    },
-    {
-        title: 'El Aleph',
-        authorEmails: ['borges@example.com'],
-        isbn: '9788400000004',
-        edition: 1,
-        publisher: 'Editorial Ejemplo',
-        publishedYear: 1949,
-        pages: 224,
-        language: 'es',
-        tags: ['fantasia'],
-        price: 12.5
-    },
-    {
-        title: 'Otras inquisiciones',
-        authorEmails: ['borges@example.com'],
-        isbn: '9788400000005',
-        edition: 1,
-        publisher: 'Editorial Ejemplo',
-        publishedYear: 1952,
-        pages: 206,
-        language: 'es',
-        tags: ['ensayo'],
-        price: 11.0
-    },
-    {
-        title: 'La plaça del Diamant',
-        authorEmails: ['rodoreda@example.com'],
-        isbn: '9788400000006',
-        edition: 5,
-        publisher: 'Editorial Ejemplo',
-        publishedYear: 1962,
-        pages: 256,
-        language: 'ca',
-        tags: ['novela'],
-        price: 13.9,
-        description: [
-            'Ambientada en el popular barrio de Gràcia en Barcelona, la historia sigue la vida de Natàlia, una joven tímida e ingenua a quien su primer marido, Quimet, apoda Colometa. A través de su mirada inocente y sensible, asistimos a la transformación de su rutina doméstica y a las dificultades de un matrimonio condicionado por las obsesiones de su esposo y la cría asfixiante de palomas.',
-            'El estallido de la Guerra Civil española y la posterior posguerra destruyen de forma implacable el frágil entorno de Colometa. Sometida al hambre, a la pérdida y a la soledad más desgarradora en una ciudad sitiada por el miedo y la miseria, la protagonista emprende una lucha desesperada por sacar adelante a sus dos hijos.',
-            'Considerada una de las obras capitales de la narrativa catalana del siglo XX, la novela destaca por su estilo íntimo y poético, convirtiéndose en un testimonio conmovedor sobre la resiliencia humana y el dolor silencioso de las personas comunes frente a los estragos del conflicto.'
-        ].join('\n\n')
-    },
-    {
-        title: 'Mirall trencat',
-        authorEmails: ['rodoreda@example.com'],
-        isbn: '9788400000007',
-        edition: 2,
-        publisher: 'Editorial Ejemplo',
-        publishedYear: 1974,
-        pages: 320,
-        language: 'ca',
-        tags: ['novela'],
-        price: 15.0
-    },
-    {
-        title: 'A Wizard of Earthsea',
-        authorEmails: ['leguin@example.com'],
-        isbn: '9788400000008',
-        edition: 1,
-        publisher: 'Editorial Ejemplo',
-        publishedYear: 1968,
-        pages: 183,
-        language: 'en',
-        tags: ['fantasia'],
-        price: 16.0
-    },
-    {
-        title: 'The Left Hand of Darkness',
-        authorEmails: ['leguin@example.com'],
-        isbn: '9788400000009',
-        edition: 1,
-        publisher: 'Editorial Ejemplo',
-        publishedYear: 1969,
-        pages: 304,
-        language: 'en',
-        tags: ['ciencia-ficcion'],
-        price: 17.5
-    },
-    {
-        title: 'Fundación',
-        authorEmails: ['asimov@example.com'],
-        isbn: '9788400000010',
-        edition: 4,
-        publisher: 'Editorial Ejemplo',
-        publishedYear: 1951,
-        pages: 244,
-        language: 'es',
-        tags: ['ciencia-ficcion', 'novela'],
-        price: 18.0
-    },
-    // Estas dos antologías son inventadas, y sirven de ejemplo de libro con dos autores
-    {
-        title: 'Antología de ciencia ficción',
-        authorEmails: ['leguin@example.com', 'asimov@example.com'],
-        isbn: '9788400000011',
-        edition: 1,
-        publisher: 'Editorial Ejemplo',
-        publishedYear: 1980,
-        pages: 410,
-        language: 'en',
-        tags: ['ciencia-ficcion'],
-        price: 21.0
-    },
-    {
-        title: 'Antología del cuento fantástico',
-        authorEmails: ['borges@example.com', 'rodoreda@example.com'],
-        isbn: '9788400000012',
-        edition: 2,
-        publisher: 'Editorial Ejemplo',
-        publishedYear: 1975,
-        pages: 350,
-        language: 'es',
-        tags: ['fantasia', 'novela'],
-        price: 19.5
+        reporterId: reporterId,
+        targetType: 'USER',
+        targetId: reporterId,
+        reason: 'INAPPROPRIATE',
+        description: 'Comportamiento inadecuado en el chat del grupo.',
+        status: 'REVIEWED',
+        adminNotes: 'En revisión por el equipo de soporte.'
     }
 ];
