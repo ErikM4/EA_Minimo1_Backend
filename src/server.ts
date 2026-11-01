@@ -14,6 +14,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import authRoutes from './routes/Auth';
 import userRoutes from './routes/User';
+import activityRoutes from './routes/Activity';
 
 const router = express();
 
@@ -30,20 +31,21 @@ mongoose
 const StartServer = () => {
     router.use(Logger);
 
-router.use(express.urlencoded({ extended: true }));
-router.use(express.json());
-router.use(cookieParser());
+    router.use(express.urlencoded({ extended: true }));
+    router.use(express.json());
+    router.use(cookieParser());
 
-/** CORS */
-// Con cookies no vale origin '*': hay que indicar el origen del front y activar credentials
-router.use(cors({ origin: config.cors.origin, credentials: true }));
+    /** CORS */
+    // Con cookies no vale origin '*': hay que indicar el origen del front y activar credentials
+    router.use(cors({ origin: config.cors.origin, credentials: true }));
 
-/** Routes */
-router.use('/auth', authRoutes);
-router.use('/users', userRoutes);
-router.use('/authors', authorRoutes);
-router.use('/books', bookRoutes);
-router.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+    /** Routes */
+    router.use('/auth', authRoutes);
+    router.use('/users', userRoutes);
+    router.use('/activities', activityRoutes);
+    router.use('/authors', authorRoutes);
+    router.use('/books', bookRoutes);
+    router.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
     /** Healthcheck */
     /**
