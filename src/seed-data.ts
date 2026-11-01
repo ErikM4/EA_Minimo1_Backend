@@ -4,6 +4,15 @@ import { IBook } from './models/Book';
 // Datos de ejemplo para llenar la base de datos.
 // Los correos, las webs, los ISBN y los precios son inventados.
 // Las contraseñas están sin cifrar: cifrarlas es la tarea del hook pre-save (ver CONTRIBUTING).
+export const usersSeed = [
+    {
+        name: 'Admin',
+        email: 'admin@example.com',
+        password: 'sprint1',
+        role: 'admin',
+        deleted: false
+    }
+];
 
 export const authorsSeed: IAuthor[] = [
     {
