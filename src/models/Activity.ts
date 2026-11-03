@@ -83,7 +83,6 @@ const ActivitySchema: Schema = new Schema(
         },
         location: {
             type: { type: String, enum: ['Point'], default: 'Point', required: true },
-            coordinates: { type: [Number], required: true }, // [lng, lat]
             addressName: { type: String, required: true, trim: true },
             isStoreLocation: { type: Boolean, default: false }
         },
