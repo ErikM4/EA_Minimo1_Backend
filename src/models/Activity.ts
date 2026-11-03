@@ -8,7 +8,7 @@ export type ActivityStatus = 'OPEN' | 'FULL' | 'COMPLETED' | 'CANCELLED';
 // Subdocumento de ubicación en estándar GeoJSON
 export interface IActivityLocation {
     type: 'Point';
-    coordinates: [number, number]; // [longitud, latitud]
+    coordinates?: [number, number]; // [longitud, latitud]
     addressName: string;
     isStoreLocation: boolean;
 }
@@ -40,7 +40,7 @@ export interface IActivity {
     modality: ActivityModality;
     status: ActivityStatus;
 
-    location: IActivityLocation;
+    location?: IActivityLocation;
     route?: IActivityRoute;
 
     schedule: {
@@ -83,6 +83,7 @@ const ActivitySchema: Schema = new Schema(
         },
         location: {
             type: { type: String, enum: ['Point'], default: 'Point', required: true },
+            coordinates: { type: [Number] },
             addressName: { type: String, required: true, trim: true },
             isStoreLocation: { type: Boolean, default: false }
         },
@@ -125,6 +126,6 @@ const ActivitySchema: Schema = new Schema(
 );
 
 // Índice GeoEspecial 2dsphere para permitir búsquedas eficientes por cercanía en el mapa
-ActivitySchema.index({ 'location.coordinates': '2dsphere' });
+//ActivitySchema.index({ 'location.coordinates': '2dsphere' });
 
 export default mongoose.model<IActivityModel>('Activity', ActivitySchema);

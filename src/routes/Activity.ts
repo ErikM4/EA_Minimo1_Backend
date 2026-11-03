@@ -46,7 +46,7 @@ const router = express.Router();
  *           default: OPEN
  *         location:
  *           type: object
- *           required: [coordinates, addressName]
+ *           required: [addressName]
  *           properties:
  *             type:
  *               type: string

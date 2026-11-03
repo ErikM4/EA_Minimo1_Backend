@@ -94,7 +94,7 @@ export const Schemas = {
 
             location: Joi.object({
                 type: Joi.string().valid('Point').default('Point'),
-                coordinates: Joi.array().items(Joi.number()).length(2).required().example([2.0003, 41.2755]),
+                coordinates: Joi.array().items(Joi.number()).length(2).optional().example([2.0003, 41.2755]),
                 addressName: Joi.string().required().example('Pistas UPC Castelldefels'),
                 isStoreLocation: Joi.boolean().default(false)
             }).required(),
