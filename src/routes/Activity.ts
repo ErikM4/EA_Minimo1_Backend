@@ -442,6 +442,27 @@ router.patch('/:activityId/soft-delete', VerifyToken, RequireAdmin, ValidateId('
 
 /**
  * @openapi
+ * /activities/{activityId}/restore:
+ *   patch:
+ *     tags: [Activities]
+ *     summary: Restaura una actividad archivada
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: activityId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Actividad restaurada con éxito
+ *       404:
+ *         description: Actividad no encontrada
+ */
+router.patch('/:activityId/restore', VerifyToken, RequireAdmin, ValidateId('activityId'), controller.restoreActivity);
+
+/**
+ * @openapi
  * /activities/{activityId}:
  *   delete:
  *     tags: [Activities]

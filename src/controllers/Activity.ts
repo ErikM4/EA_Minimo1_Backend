@@ -123,6 +123,22 @@ const softDeleteActivity = async (req: Request<{ activityId: string }>, res: Res
     }
 };
 
+// Recupera una actividad archivada.
+const restoreActivity = async (req: Request<{ activityId: string }>, res: Response, next: NextFunction) => {
+    const activityId = req.params.activityId;
+
+    try {
+        const activity = await ActivityService.restoreActivity(activityId);
+        if (activity) {
+            res.status(200).json({ activity });
+        } else {
+            res.status(404).json({ message: 'Actividad no encontrada' });
+        }
+    } catch (error) {
+        next(error);
+    }
+};
+
 // Archiva varias actividades en una sola operación.
 const bulkSoftDelete = async (req: Request<{}, {}, { ids: string[] }>, res: Response, next: NextFunction) => {
     try {
@@ -177,6 +193,7 @@ export default {
     joinActivity,
     updateActivity,
     softDeleteActivity,
+    restoreActivity,
     bulkSoftDelete,
     hardDeleteActivity,
     bulkHardDelete

@@ -177,6 +177,11 @@ export const softDeleteActivity = (activityId: string) => {
     return Activity.findByIdAndUpdate(activityId, { deleted: true, deletedAt: new Date() }, { new: true });
 };
 
+// Recupera una actividad archivada usando su identificador.
+export const restoreActivity = (activityId: string) => {
+    return Activity.findByIdAndUpdate(activityId, { deleted: false, deletedAt: null }, { new: true });
+};
+
 // Archiva varias actividades en una sola operación.
 export const bulkSoftDeleteActivities = (ids: string[]) => {
     return Activity.updateMany({ _id: { $in: ids } }, { $set: { deleted: true, deletedAt: new Date() } });
@@ -200,6 +205,7 @@ export default {
     joinActivity,
     updateActivity,
     softDeleteActivity,
+    restoreActivity,
     bulkSoftDeleteActivities,
     hardDeleteActivity,
     bulkHardDeleteActivities
