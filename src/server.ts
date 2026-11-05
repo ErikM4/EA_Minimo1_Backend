@@ -6,15 +6,15 @@ import { Cors } from './middleware/Cors';
 import Logging from './library/Logging';
 import Logger from './middleware/Logger';
 import ErrorHandler from './middleware/ErrorHandler';
-import swaggerUi from 'swagger-ui-express'; // permite mostrar Swagger en el navegador.
-import swaggerDocument from './config/swagger'; // importa el documento que hemos creado en swagger.ts
+import swaggerUi from 'swagger-ui-express';
+import swaggerDocument from './config/swagger';
 import cookieParser from 'cookie-parser';
 import authRoutes from './routes/Auth';
 import userRoutes from './routes/User';
 import activityRoutes from './routes/Activity';
 import reportRoutes from './routes/Report';
-import { attachChat } from './services/ChatService';
 import wishlistRoutes from './routes/Wishlist';
+import { attachChat } from './services/ChatService';
 
 const router = express();
 
@@ -36,7 +36,6 @@ const StartServer = () => {
     router.use(cookieParser());
 
     /** CORS */
-    // Con cookies no vale origin '*': hay que indicar el origen del front y activar credentials
     router.use(Cors);
 
     /** Routes */
@@ -44,23 +43,10 @@ const StartServer = () => {
     router.use('/users', userRoutes);
     router.use('/activities', activityRoutes);
     router.use('/reports', reportRoutes);
-    router.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
     router.use('/wishlists', wishlistRoutes);
+    router.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
     /** Healthcheck */
-    /**
-     * @openapi
-     * /ping:
-     *   get:
-     *     tags: [Health]
-     *     summary: Comprueba que la API está viva
-     *     responses:
-     *       200:
-     *         description: La API responde
-     *         content:
-     *           application/json:
-     *             example: { hello: world }
-     */
     router.get('/ping', (req, res) => res.status(200).json({ hello: 'world' }));
 
     /** Error handling */
@@ -71,7 +57,6 @@ const StartServer = () => {
     router.use(ErrorHandler);
 
     const server = http.createServer(router);
-    // El chat comparte el mismo servidor para usar la configuración común de la API.
     attachChat(server);
     server.listen(config.server.port, () => Logging.info(`Server is running on port ${config.server.port}`));
 };
