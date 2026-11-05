@@ -14,6 +14,7 @@ import userRoutes from './routes/User';
 import activityRoutes from './routes/Activity';
 import reportRoutes from './routes/Report';
 import { attachChat } from './services/ChatService';
+import wishlistRoutes from './routes/Wishlist';
 
 const router = express();
 
@@ -44,6 +45,7 @@ const StartServer = () => {
     router.use('/activities', activityRoutes);
     router.use('/reports', reportRoutes);
     router.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+    router.use('/wishlists', wishlistRoutes);
 
     /** Healthcheck */
     /**

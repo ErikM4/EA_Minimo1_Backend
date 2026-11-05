@@ -195,34 +195,34 @@ export const Schemas = {
             targetType: Joi.string().valid('ACTIVITY', 'USER').required(),
             targetId: Joi.string().regex(OBJECT_ID).required(),
             reason: Joi.string().valid('SPAM', 'INAPPROPRIATE', 'NO_SHOW', 'FAKE_LOCATION', 'OTHER').required(),
-            description: Joi.string().min(5).max(1000).required(),
+            description: Joi.string().min(5).max(1000).required()
         }),
-    auth: {
-  register: Joi.object({
-    name: Joi.string().min(2).required(),
-    email: Joi.string().email().required(),
-    password: Joi.string().min(6).required(),
-  }),
-  login: Joi.object({
-    email: Joi.string().email().required(),
-    password: Joi.string().required(),
-  }),
-},
+        auth: {
+            register: Joi.object({
+                name: Joi.string().min(2).required(),
+                email: Joi.string().email().required(),
+                password: Joi.string().min(6).required()
+            }),
+            login: Joi.object({
+                email: Joi.string().email().required(),
+                password: Joi.string().required()
+            })
+        },
 
-user: {
-    create: Joi.object({
-        name: Joi.string().min(2).required(),
-        email: Joi.string().email().required(),
-        password: Joi.string().min(6).required(),
-        role: Joi.string().valid('USER', 'ADMIN').default('USER'),
-    }),
-    update: Joi.object({
-        name: Joi.string().min(2),
-        email: Joi.string().email(),
-        password: Joi.string().min(6),
-        role: Joi.string().valid('USER', 'ADMIN'),
-    }).min(1),
-},
+        user: {
+            create: Joi.object({
+                name: Joi.string().min(2).required(),
+                email: Joi.string().email().required(),
+                password: Joi.string().min(6).required(),
+                role: Joi.string().valid('USER', 'ADMIN').default('USER')
+            }),
+            update: Joi.object({
+                name: Joi.string().min(2),
+                email: Joi.string().email(),
+                password: Joi.string().min(6),
+                role: Joi.string().valid('USER', 'ADMIN')
+            }).min(1)
+        },
 
         update: Joi.object<Partial<IReport>>({
             status: Joi.string().valid('PENDING', 'REVIEWED', 'RESOLVED', 'DISMISSED').optional(),
@@ -230,5 +230,25 @@ user: {
             reason: Joi.string().valid('SPAM', 'INAPPROPRIATE', 'NO_SHOW', 'FAKE_LOCATION', 'OTHER').optional(),
             description: Joi.string().min(5).max(1000).optional()
         }).min(1)
+    },
+
+    wishlist: {
+        create: Joi.object({
+            name: Joi.string().min(2).max(100).required(),
+            description: Joi.string().max(500).allow('').optional(),
+            isPublic: Joi.boolean().default(true)
+        }),
+        update: Joi.object({
+            name: Joi.string().min(2).max(100).optional(),
+            description: Joi.string().max(500).allow('').optional(),
+            isPublic: Joi.boolean().optional()
+        }).min(1),
+        addItem: Joi.object({
+            activityId: Joi.string()
+                .regex(/^[0-9a-fA-F]{24}$/)
+                .required(),
+            notes: Joi.string().max(250).allow('').optional(),
+            priority: Joi.number().min(1).max(5).default(1)
+        })
     }
 };
